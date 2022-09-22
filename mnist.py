@@ -46,7 +46,6 @@ class MNISTdigits2d(MNISTdigits):
         return X, y
 
 import matplotlib.pyplot as plt
-%matplotlib inline
 import time
 
 class ModelTrainer:
