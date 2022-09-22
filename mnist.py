@@ -2,6 +2,12 @@ from torchvision import models, transforms
 import torch.nn as nn
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
+import matplotlib.pyplot as plt
+import time
+import torch
+available_device = (torch.device('cuda') if torch.cuda.is_available() 
+         else torch.device('cpu'))
+print("Training on device ", available_device)
 
 import os
 train_data_path='/content/sample_data/mnist_train_small.csv'
@@ -45,8 +51,6 @@ class MNISTdigits2d(MNISTdigits):
 
         return X, y
 
-import matplotlib.pyplot as plt
-import time
 
 class ModelTrainer:
     def __init__(self,model,loss_function,optimizer):
