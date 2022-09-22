@@ -9,11 +9,6 @@ available_device = (torch.device('cuda') if torch.cuda.is_available()
          else torch.device('cpu'))
 print("Training on device ", available_device)
 
-import os
-train_data_path='/content/sample_data/mnist_train_small.csv'
-if not os.path.exists(train_data_path):
-  print("Loading module failed: Could not locate data at %s."%train_data_path)
-
 
 class MNISTdigits(torch.utils.data.Dataset):
   def __init__(self, file_name):
