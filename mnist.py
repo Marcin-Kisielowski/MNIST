@@ -50,7 +50,7 @@ class MNISTdigits2dAugmented(MNISTdigits2d):
     def __init__(self, file_name, augmentation_ratio, transform=None): #the augmentation ratio is the ratio of artificial data to original data, we assume that is an integer
         super().__init__(file_name)
         self.ratio=round(augmentation_ratio)
-        self.transform=transform
+        self.augmentation_transform=transform
     def __len__(self):
         return (self.ratio+1)*(super().__len__())
     def __getitem__(self, index):
@@ -58,8 +58,10 @@ class MNISTdigits2dAugmented(MNISTdigits2d):
         # Select sample
         original_index=index//ratio
         X = self.data_tensor[original_index,:]
+        if self.transform:
+            X = self.transform(X) #this transformation is normalization
         if index%ratio:
-            X = self.transform(X)
+            X = self.augmentation_transform(X)
         y = self.labels[original_index]
         return X, y
     
@@ -145,8 +147,8 @@ class ResNetModelTrainer(ModelTrainer):
         self.loss_fn=nn.CrossEntropyLoss()
         self.epochs=[]
         self.losses=[]
-    def load_data(self,file_name,split_ratio_list):
-        self.data_set=MNISTdigits2d(file_name)
+    def load_data(self,data_set,split_ratio_list):
+        self.data_set=data_set
         self.split_data(split_ratio_list)
         self.normalize_train_data()
     def save_parameters(self):
