@@ -57,7 +57,7 @@ class MNISTdigits2dAugmented(MNISTdigits2d):
         'Generates one sample of data'
         # Select sample
         original_index=index//self.ratio
-        X = self.data_tensor[original_index,:]
+        X = self.data_tensor[original_index,:].view(1,28,28)
         if self.transform:
             X = self.transform(X) #this transformation is normalization
         if index%self.ratio:
