@@ -56,11 +56,11 @@ class MNISTdigits2dAugmented(MNISTdigits2d):
     def __getitem__(self, index):
         'Generates one sample of data'
         # Select sample
-        original_index=index//ratio
+        original_index=index//self.ratio
         X = self.data_tensor[original_index,:]
         if self.transform:
             X = self.transform(X) #this transformation is normalization
-        if index%ratio:
+        if index%self.ratio:
             X = self.augmentation_transform(X)
         y = self.labels[original_index]
         return X, y
