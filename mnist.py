@@ -46,7 +46,24 @@ class MNISTdigits2d(MNISTdigits):
 
         return X, y
 
-
+class MNISTdigits2dAugmented(MNISTdigits2d):
+    def __init__(self, file_name, augmentation_ratio, transform=None): #the augmentation ratio is the ratio of artificial data to original data, we assume that is an integer
+        super().__init__(file_name)
+        self.ratio=round(augmentation_ratio)
+        self.transform=transform
+    def __len__(self):
+        return (self.ratio+1)*(super().__len__())
+    def __getitem__(self, index):
+        'Generates one sample of data'
+        # Select sample
+        original_index=index//ratio
+        X = self.data_tensor[original_index,:]
+        if index%ratio:
+            X = self.transform(X)
+        y = self.labels[original_index]
+        return X, y
+    
+    
 class ModelTrainer:
     def __init__(self,model,loss_function,optimizer):
         self.model=model
