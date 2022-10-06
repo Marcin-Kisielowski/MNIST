@@ -47,12 +47,12 @@ class MNISTdigits2d(MNISTdigits):
         return X, y
 
 class MNISTdigits2dAugmented(MNISTdigits2d):
-    def __init__(self, file_name, augmentation_ratio, transform=None): #the augmentation ratio is the ratio of artificial data to original data, we assume that is an integer
+    def __init__(self, file_name, augmentation_ratio, transform=None): #the augmentation ratio is the ratio of the size of augmented data to original data, we assume that is an integer
         super().__init__(file_name)
         self.ratio=round(augmentation_ratio)
         self.augmentation_transform=transform
     def __len__(self):
-        return (self.ratio+1)*(super().__len__())
+        return (self.ratio)*(super().__len__())
     def __getitem__(self, index):
         'Generates one sample of data'
         # Select sample
