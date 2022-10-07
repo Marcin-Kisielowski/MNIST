@@ -46,23 +46,20 @@ class MNISTdigits2d(MNISTdigits):
 
         return X, y
 
-class MNISTdigits2dAugmented(MNISTdigits2d):
-    def __init__(self, file_name, augmentation_ratio, transform=None): #the augmentation ratio is the ratio of the size of augmented data to original data, we assume that is an integer
-        super().__init__(file_name)
+class MNISTdigits2dAugmented(torch.utils.data.Dataset):
+    def __init__(self, dataset, augmentation_ratio, transform=None): #the augmentation ratio is the ratio of the size of augmented data to original data, we assume that is an integer
+        self.original_dataset=dataset
         self.ratio=round(augmentation_ratio)
         self.augmentation_transform=transform
     def __len__(self):
-        return (self.ratio)*(super().__len__())
+        return (self.ratio)*(len(self.original_dataset))
     def __getitem__(self, index):
         'Generates one sample of data'
         # Select sample
         original_index=index//self.ratio
-        X = self.data_tensor[original_index,:].view(1,28,28)
-        if self.transform:
-            X = self.transform(X) #this transformation is normalization
+        X,y = self.original_dataset[original_index]
         if index%self.ratio:
             X = self.augmentation_transform(X)
-        y = self.labels[original_index]
         return X, y
     
     
@@ -73,13 +70,16 @@ class ModelTrainer:
         self.optimizer=optimizer
         self.epochs=[]
         self.losses=[]
-    def load_data(self,file_name,split_ratio_list):
+    def load_data(self,file_name,split_ratio_list,augmentation_ratio=1,augmentation_transform=None):
+        self.augmentation_ratio=augmentation_ratio
+        self.augmentation_transform=augmentation_transform
         self.data_set=MNISTdigits(file_name)
         self.split_data(split_ratio_list)
     def split_data(self,split_ratio_list):
         split_ratio=torch.tensor(split_ratio_list)
         lengths=split_ratio*(len(self.data_set)//100)
-        self.train_set,self.valid_set=torch.utils.data.random_split(self.data_set,lengths)
+        train_set,self.valid_set=torch.utils.data.random_split(self.data_set,lengths)
+        self.train_set=MNISTdigits2dAugmented(train_set,self.augmentation_ratio,self.augmentation_transform)
     def normalize_train_data(self):
         data_loader=torch.utils.data.DataLoader(self.train_set, batch_size=256, shuffle=False)
         means=[]
@@ -147,8 +147,10 @@ class ResNetModelTrainer(ModelTrainer):
         self.loss_fn=nn.CrossEntropyLoss()
         self.epochs=[]
         self.losses=[]
-    def load_data(self,data_set,split_ratio_list):
-        self.data_set=data_set
+    def load_data(self,file_name,split_ratio_list,augmentation_ratio=1,augmentation_transform=None):
+        self.augmentation_ratio=augmentation_ratio
+        self.augmentation_transform=augmentation_transform
+        self.data_set=MNISTdigits2d(file_name)
         self.split_data(split_ratio_list)
         self.normalize_train_data()
     def save_parameters(self):
