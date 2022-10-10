@@ -94,6 +94,7 @@ class ModelTrainer:
         return self.training_time
     def get_accuracy(self,dataset):
         self.model.eval()
+        dataset.transform=self.data_set.transform
         data_loader=torch.utils.data.DataLoader(dataset, batch_size=64, shuffle=True)
         correct_guesses=0
         all_samples=0
