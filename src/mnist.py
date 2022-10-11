@@ -94,7 +94,10 @@ class ModelTrainer:
         return self.training_time
     def get_accuracy(self,dataset):
         self.model.eval()
-        dataset.transform=self.data_set.transform
+        if dataset.transform:
+            dataset.transform=transforms.Compose([self.data_set.transform,dataset.transform])
+        else:
+            dataset.transform = self.data_set.transform
         data_loader=torch.utils.data.DataLoader(dataset, batch_size=64, shuffle=True)
         correct_guesses=0
         all_samples=0
@@ -130,6 +133,6 @@ class ResNetModelTrainer(ModelTrainer):
         self.loss_fn=nn.CrossEntropyLoss()
         self.epochs=[]
         self.losses=[]
-    def save_parameters(self):
-        self.parameters_file_name="./resnet_epochs_%d_batch_size_%d_lr_%f_val_accuracy_%f.pt"%(len(self.epochs),self.batch_size,self.learning_rate,self.get_accuracy(self.valid_set))
+    def save_parameters(self,file_suffix=''):
+        self.parameters_file_name="./resnet18_epochs_%d_batch_size_%d_lr_%f_val_accuracy_%f%s.pt"%(len(self.epochs),self.batch_size,self.learning_rate,self.get_accuracy(self.valid_set),file_suffix)
         super().save_parameters(self.parameters_file_name)
