@@ -109,6 +109,8 @@ class ModelTrainer:
     def get_train_valid_accuracy(self):
         return self.get_accuracy(self.train_set), self.get_accuracy(self.valid_set)
     def plot_loss_agains_n_epochs(self):
+        plt.xlabel('number of epochs')
+        plt.ylabel('train loss')
         plt.rcParams['figure.figsize'] = [20, 10]
         plt.plot(self.epochs,self.losses)
     def save_parameters(self,file_name):
