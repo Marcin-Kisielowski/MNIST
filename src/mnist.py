@@ -60,7 +60,7 @@ class ModelTrainer:
     def split_data(self,split_ratio_list):
         split_ratio=torch.tensor(split_ratio_list)
         lengths=split_ratio*(len(self.data_set)//100)
-        train_set,self.valid_set=torch.utils.data.random_split(self.data_set,lengths)
+        train_set,self.valid_set=torch.utils.data.random_split(self.data_set,lengths,generator=torch.Generator().manual_seed(0))
         self.train_set=MNISTdigitsAugmented(train_set,self.augmentation_ratio,self.augmentation_transform)
     def normalize_train_data(self):
         data_loader=torch.utils.data.DataLoader(self.train_set, batch_size=256, shuffle=False)
