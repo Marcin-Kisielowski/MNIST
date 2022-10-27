@@ -50,7 +50,8 @@ class ModelTrainer:
         self.loss_fn=loss_function
         self.optimizer=optimizer
         self.epochs=[]
-        self.losses=[]
+        self.train_losses=[]
+        self.valid_losses=[]
     def load_data(self,file_name,split_ratio_list,augmentation_ratio=1,augmentation_transform=None):
         self.augmentation_ratio=augmentation_ratio
         self.augmentation_transform=augmentation_transform
@@ -60,7 +61,7 @@ class ModelTrainer:
     def split_data(self,split_ratio_list):
         split_ratio=torch.tensor(split_ratio_list)
         lengths=split_ratio*(len(self.data_set)//100)
-        train_set,self.valid_set=torch.utils.data.random_split(self.data_set,lengths,generator=torch.Generator().manual_seed(0))
+        train_set,self.valid_set=torch.utils.data.random_split(self.data_set,lengths)
         self.train_set=MNISTdigitsAugmented(train_set,self.augmentation_ratio,self.augmentation_transform)
     def normalize_train_data(self):
         data_loader=torch.utils.data.DataLoader(self.train_set, batch_size=256, shuffle=False)
@@ -73,21 +74,29 @@ class ModelTrainer:
         self.std = torch.mean(torch.tensor(stds))
         self.data_set.transform = transforms.Normalize((self.mean),(self.std))
     def train(self,n_epochs, batch_size=64):
-        self.model.train()
         self.batch_size=batch_size
         train_loader=torch.utils.data.DataLoader(self.train_set, batch_size=batch_size, shuffle=True)
+        valid_loader=torch.utils.data.DataLoader(self.valid_set, batch_size=batch_size, shuffle=False)
         initial_n_epochs=len(self.epochs)
         start_time=time.time()
         for epoch in range(initial_n_epochs+1,initial_n_epochs+n_epochs+1): #We add len(epochs) because we would like to continue where we started after running train() the next time
+            self.model.train()
             for imgs,labels in train_loader:
                 imgs=imgs.to(device=available_device)
                 labels=labels.to(device=available_device)
-                self.loss=self.loss_fn(self.model(imgs),labels)
+                self.train_loss=self.loss_fn(self.model(imgs),labels)
                 self.optimizer.zero_grad()
-                self.loss.backward()
+                self.train_loss.backward()
                 self.optimizer.step()
+            self.model.eval()
+            with torch.no_grad():
+              for imgs,labels in valid_loader:
+                imgs=imgs.to(device=available_device)
+                labels=labels.to(device=available_device)
+                self.valid_loss=self.loss_fn(self.model(imgs),labels)
             self.epochs.append(epoch) 
-            self.losses.append(self.loss.detach().item())
+            self.train_losses.append(self.train_loss.detach().item())
+            self.valid_losses.append(self.valid_loss.detach().item())
         end_time=time.time()
         self.training_time=end_time-start_time
     def get_training_time(self):
@@ -95,7 +104,7 @@ class ModelTrainer:
     def get_accuracy(self,dataset):
         self.model.eval()
         dataset.transform = self.data_set.transform
-        data_loader=torch.utils.data.DataLoader(dataset, batch_size=64, shuffle=True)
+        data_loader=torch.utils.data.DataLoader(dataset, batch_size=64, shuffle=False)
         correct_guesses=0
         all_samples=0
         with torch.no_grad():
@@ -109,10 +118,12 @@ class ModelTrainer:
     def get_train_valid_accuracy(self):
         return self.get_accuracy(self.train_set), self.get_accuracy(self.valid_set)
     def plot_loss_agains_n_epochs(self):
-        plt.xlabel('number of epochs')
-        plt.ylabel('train loss')
         plt.rcParams['figure.figsize'] = [20, 10]
-        plt.plot(self.epochs,self.losses)
+        plt.xlabel('number of epochs')
+        plt.ylabel('loss')
+        plt.plot(self.epochs,self.train_losses,label='train loss')
+        plt.plot(self.epochs,self.valid_losses,label='validation loss')
+        plt.legend(loc='upper right')
     def save_parameters(self,file_name):
         torch.save(self.model.state_dict(), file_name)
 
@@ -131,7 +142,8 @@ class ResNetModelTrainer(ModelTrainer):
         self.optimizer=torch.optim.SGD(self.model.parameters(),lr=learning_rate)
         self.loss_fn=nn.CrossEntropyLoss()
         self.epochs=[]
-        self.losses=[]
+        self.train_losses=[]
+        self.valid_losses=[]
     def save_parameters(self,file_suffix=''):
         self.parameters_file_name="./saved_models/resnet18_epochs_%d_batch_size_%d_lr_%f_val_accuracy_%f%s.pt"%(len(self.epochs),self.batch_size,self.learning_rate,self.get_accuracy(self.valid_set),file_suffix)
         super().save_parameters(self.parameters_file_name)
